@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maruti Suzuki India · Monthly Performance · FY 2024-25 to FY 2026-27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+:root {
+    --paper: #EEF1EC; --card: #FFFFFF; --ink: #1E2A24; --muted: #6B7770; --rule: #D5DBD3;
+    --teal: #1F6F62; --ochre: #C8892B; --navy: #2F4B8A; --loss: #A8432F; --sel: #F4F7F3;
+    --gap: 16px; --radius: 6px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif; }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 24px; }
+header { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 20px; }
+.eyebrow { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 4px 0 0; font-size: 30px; font-weight: 600; }
+.filters label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+select { font: inherit; font-size: 14px; color: var(--ink); min-width: 240px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 4px; background: #fff; }
+select:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+.ledger { display: grid; grid-template-columns: repeat(5, 1fr); background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: var(--gap); }
+.kpi { padding: 18px 20px; border-right: 1px solid var(--rule); min-width: 0; }
+.kpi:last-child { border-right: none; }
+.kpi-label { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.kpi-value { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; margin: 6px 0 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kpi-delta, .kpi-sub { font-size: 12px; }
+.kpi-delta { font-family: "IBM Plex Mono", monospace; }
+.kpi-sub { color: var(--muted); }
+.up { color: var(--teal); } .down { color: var(--loss); } .neutral { color: var(--muted); }
+
+.row { display: grid; gap: var(--gap); margin-bottom: var(--gap); }
+.row-2 { grid-template-columns: 1.5fr 1fr; }
+.panel { background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: 18px 20px; min-width: 0; }
+.panel h2 { font-size: 15px; font-weight: 600; margin: 0 0 4px; }
+.panel .sub { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+.chart-box { position: relative; height: 280px; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+td.num { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
+tr.pending td { color: var(--muted); font-style: italic; }
+tfoot td { font-weight: 600; border-top: 2px solid var(--ink); border-bottom: none; }
+.tag { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+
+.note { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.55; }
+.note b { color: var(--ink); font-weight: 600; }
+
+@media (max-width: 900px) {
+    .ledger { grid-template-columns: repeat(2, 1fr); }
+    .kpi:nth-child(2n) { border-right: none; }
+    .kpi:nth-child(-n+4) { border-bottom: 1px solid var(--rule); }
+    .row-2 { grid-template-columns: 1fr; }
+}
+@media print { body { background: #fff; } .filters { display: none; } .panel, .kpi { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+    <header>
+        <div>
+            <div class="eyebrow">Maruti Suzuki India Limited · Standalone · Monthly</div>
+            <h1>Monthly Performance Dashboard</h1>
+        </div>
+        <div class="filters">
+            <label>Financial year
+                <select id="fy"></select>
+            </label>
+        </div>
+    </header>
+
+    <section class="ledger" aria-label="Headline numbers">
+        <div class="kpi">
+            <div class="kpi-label">Sales (units)</div>
+            <div class="kpi-value" id="k-units">–</div>
+            <div class="kpi-delta" id="k-units-d"></div>
+            <div class="kpi-sub" id="k-units-s"></div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Revenue (net sales)</div>
+            <div class="kpi-value" id="k-rev">–</div>
+            <div class="kpi-delta" id="k-rev-d"></div>
+            <div class="kpi-sub" id="k-rev-s"></div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Cost of production</div>
+            <div class="kpi-value" id="k-cost">–</div>
+            <div class="kpi-delta" id="k-cost-d"></div>
+            <div class="kpi-sub" id="k-cost-s"></div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Profit after tax</div>
+            <div class="kpi-value" id="k-profit">–</div>
+            <div class="kpi-delta" id="k-profit-d"></div>
+            <div class="kpi-sub" id="k-profit-s"></div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Average per month</div>
+            <div class="kpi-value" id="k-avg">–</div>
+            <div class="kpi-delta" id="k-avg-d"></div>
+            <div class="kpi-sub" id="k-avg-s"></div>
+        </div>
+    </section>
+
+    <section class="row row-2">
+        <div class="panel">
+            <h2>Monthly sales volume</h2>
+            <p class="sub">Units per month · domestic includes OEM supply · months not yet reported are left blank</p>
+            <div class="chart-box"><canvas id="monthChart"></canvas></div>
+        </div>
+        <div class="panel">
+            <h2>Quarterly revenue and profit</h2>
+            <p class="sub">₹ crore · bars: net sales · line: profit after tax · blank = not verified</p>
+            <div class="chart-box"><canvas id="qChart"></canvas></div>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-bottom: var(--gap);">
+        <h2>Month by month</h2>
+        <p class="sub">Monthly sales are reported by the company. Revenue, profit and cost are not published monthly, so they appear in the quarterly table below.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Month</th><th>Domestic (incl. OEM)</th><th>Exports</th><th>Total sales</th><th>Export share</th><th>vs same month last year</th>
+                    </tr>
+                </thead>
+                <tbody id="month-body"></tbody>
+                <tfoot id="month-foot"></tfoot>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel" style="margin-bottom: var(--gap);">
+        <h2>Quarterly financials</h2>
+        <p class="sub">Quarters are the lowest level at which the company reports revenue, profit and cost.</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Quarter</th><th>Sales (units)</th><th>Revenue (net sales)</th><th>Profit after tax</th><th>Net margin</th><th>Cost of production*</th><th>Net sales per vehicle</th>
+                    </tr>
+                </thead>
+                <tbody id="q-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <p class="note">
+        <b>Sources.</b> Monthly sales volumes (domestic, OEM, exports, total) are from Maruti Suzuki's monthly sales press releases, April 2024 to September 2026.
+        Net sales and profit after tax by quarter are standalone, from the company's quarterly results as reported in the press. Annual figures are from the company's
+        full-year results. Full-year FY 2024-25 and FY 2025-26 figures reconcile to the company's reported totals.
+    </p>
+    <p class="note">
+        <b>Derived figures.</b> February 2026 sales (213,995 units) are the Q4 FY26 total less January and March. February 2026 exports are the full-year export total less the
+        other eleven months. The May 2025 total of 180,077 units is the figure implied by the reported April–August total. These are the only derived monthly values.
+        *Cost of production is net sales less operating EBITDA, shown only where the company's EBITDA was verified (FY 2024-25 and FY 2025-26 full-year, and Q4 FY 2025-26).
+    </p>
+    <p class="note">
+        <b>Not available.</b> Monthly revenue, profit and cost were not published by the company. Quarterly financials for Q2 and Q3 of FY 2024-25 and FY 2025-26, and for
+        Q2 FY 2026-27, could not be verified in the sources I could access, so they are left blank rather than estimated. Figures are standalone and differ from consolidated results.
+    </p>
+</div>
+
+<script>
+/* ---------- Monthly sales volumes (units). dom = domestic incl. OEM; exp = exports ---------- */
+const MONTHS = [
+    // FY 2024-25
+    { fy: 'FY25', m: 'Apr 2024', dom: 145929, exp: 22160,  tot: 168089 },
+    { fy: 'FY25', m: 'May 2024', dom: 157184, exp: 17367,  tot: 174551 },
+    { fy: 'FY25', m: 'Jun 2024', dom: 148195, exp: 31033,  tot: 179228 },
+    { fy: 'FY25', m: 'Jul 2024', dom: 151056, exp: 23985,  tot: 175041 },
+    { fy: 'FY25', m: 'Aug 2024', dom: 155779, exp: 26003,  tot: 181782 },
+    { fy: 'FY25', m: 'Sep 2024', dom: 156999, exp: 27728,  tot: 184727 },
+    { fy: 'FY25', m: 'Oct 2024', dom: 173266, exp: 33168,  tot: 206434 },
+    { fy: 'FY25', m: 'Nov 2024', dom: 152898, exp: 28633,  tot: 181531 },
+    { fy: 'FY25', m: 'Dec 2024', dom: 140829, exp: 37419,  tot: 178248 },
+    { fy: 'FY25', m: 'Jan 2025', dom: 185151, exp: 27100,  tot: 212251 },
+    { fy: 'FY25', m: 'Feb 2025', dom: 174379, exp: 25021,  tot: 199400 },
+    { fy: 'FY25', m: 'Mar 2025', dom: 160016, exp: 32968,  tot: 192984 },
+    // FY 2025-26
+    { fy: 'FY26', m: 'Apr 2025', dom: 151880, exp: 27911,  tot: 179791 },
+    { fy: 'FY26', m: 'May 2025', dom: 148858, exp: 31219,  tot: 180077 },
+    { fy: 'FY26', m: 'Jun 2025', dom: 130151, exp: 37842,  tot: 167993 },
+    { fy: 'FY26', m: 'Jul 2025', dom: 148781, exp: 31745,  tot: 180526 },
+    { fy: 'FY26', m: 'Aug 2025', dom: 144145, exp: 36538,  tot: 180683 },
+    { fy: 'FY26', m: 'Sep 2025', dom: 147461, exp: 42204,  tot: 189665 },
+    { fy: 'FY26', m: 'Oct 2025', dom: 189590, exp: 31304,  tot: 220894 },
+    { fy: 'FY26', m: 'Nov 2025', dom: 182964, exp: 46057,  tot: 229021 },
+    { fy: 'FY26', m: 'Dec 2025', dom: 192115, exp: 25739,  tot: 217854 },
+    { fy: 'FY26', m: 'Jan 2026', dom: 185943, exp: 51020,  tot: 236963 },
+    { fy: 'FY26', m: 'Feb 2026', dom: 174840, exp: 39155,  tot: 213995 },   // derived
+    { fy: 'FY26', m: 'Mar 2026', dom: 178211, exp: 47040,  tot: 225251 },
+    // FY 2026-27 (reported to September 2026)
+    { fy: 'FY27', m: 'Apr 2026', dom: 199592, exp: 40054,  tot: 239646 },
+    { fy: 'FY27', m: 'May 2026', dom: 200774, exp: 41914,  tot: 242688 },
+    { fy: 'FY27', m: 'Jun 2026', dom: 157622, exp: 42768,  tot: 200390 },
+    { fy: 'FY27', m: 'Jul 2026', dom: 211365, exp: 30056,  tot: 241421 },
+    { fy: 'FY27', m: 'Aug 2026', dom: 185376, exp: 33844,  tot: 219220 },
+    { fy: 'FY27', m: 'Sep 2026', dom: 191794, exp: 44219,  tot: 236013 }
+];
+const MONTH_NAMES = ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
+
+/* ---------- Quarterly financials (₹ million). null = not verified ---------- */
+const QUARTERS = {
+    FY25: [
+        { q: 'Q1', ns: 338753, pat: 36499,  ebitda: null, cost: null },
+        { q: 'Q2', ns: null,   pat: null,   ebitda: null, cost: null },
+        { q: 'Q3', ns: null,   pat: null,   ebitda: null, cost: null },
+        { q: 'Q4', ns: 388391, pat: 38573,  ebitda: null, cost: null }
+    ],
+    FY26: [
+        { q: 'Q1', ns: 366206, pat: 37581,  ebitda: null,  cost: null },
+        { q: 'Q2', ns: null,   pat: null,   ebitda: null,  cost: null },
+        { q: 'Q3', ns: null,   pat: null,   ebitda: null,  cost: null },
+        { q: 'Q4', ns: 500787, pat: 35905,  ebitda: 61569, cost: 439218 }
+    ],
+    FY27: [
+        { q: 'Q1', ns: 499591, pat: 33521,  ebitda: null, cost: null },
+        { q: 'Q2', ns: null,   pat: null,   ebitda: null, cost: null },
+        { q: 'Q3', ns: 'pending', pat: 'pending', ebitda: null, cost: null },
+        { q: 'Q4', ns: 'pending', pat: 'pending', ebitda: null, cost: null }
+    ]
+};
+
+/* ---------- Full-year totals (₹ million, units) for headline numbers ---------- */
+const YEAR = {
+    FY25: { label: 'FY 2024-25', units: 2234266, ns: 1450980, pat: 142976, ebitda: 201492, prior: { label: 'FY 2023-24', units: 2135323, ns: 1349378, pat: 132094 } },
+    FY26: { label: 'FY 2025-26', units: 2422713, ns: 1743695, pat: 144454, ebitda: 214502, prior: { label: 'FY 2024-25', units: 2234266, ns: 1450980, pat: 142976 } },
+    FY27: { label: 'FY 2026-27 (Apr–Sep)', units: 1379378, ns: 499591, pat: 33521, ebitda: null,
+            prior: { label: 'Apr–Sep FY 2025-26', units: 1078735, ns: 366206, pat: 37581 },
+            note: 'Revenue and profit: Q1 only' }
+};
+
+/* ---------- Helpers ---------- */
+const $ = id => document.getElementById(id);
+const cr = mn => mn == null ? 'n/a' : '₹' + Math.round(mn / 10).toLocaleString('en-IN') + ' Cr';
+const inr = v => v == null ? 'n/a' : '₹' + Math.round(v).toLocaleString('en-IN');
+const num = v => v == null ? '–' : Math.round(v).toLocaleString('en-IN');
+const pct = v => v == null ? '–' : (v * 100).toFixed(1) + '%';
+const change = (c, p) => (c == null || p == null) ? null : (c - p) / p;
+const arrow = d => d == null ? '' : (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d * 100).toFixed(1) + '%';
+const cls = d => d == null ? 'neutral' : d >= 0 ? 'up' : 'down';
+const monthsOf = fy => MONTHS.filter(r => r.fy === fy);
+const sum = (arr, k) => arr.reduce((s, r) => s + (r[k] || 0), 0);
+
+/* ---------- Headline numbers ---------- */
+function renderKPIs() {
+    const fy = $('fy').value;
+    const y = YEAR[fy], p = y.prior;
+    const rows = monthsOf(fy);
+    const n = rows.length;
+    const units = sum(rows, 'tot');
+    const priorRows = MONTHS.filter(r => r.fy === (fy === 'FY25' ? 'FY24' : fy === 'FY26' ? 'FY25' : 'FY26'));
+    const priorUnits = fy === 'FY27' ? sum(monthsOf('FY26').slice(0, 6), 'tot') : p.units;
+
+    $('k-units').textContent = num(units);
+    $('k-units-d').textContent = priorUnits ? arrow(change(units, priorUnits)) + ' vs ' + (fy === 'FY27' ? 'Apr–Sep FY 2025-26' : p.label) : '';
+    $('k-units-d').className = 'kpi-delta ' + cls(change(units, priorUnits));
+    $('k-units-s').textContent = n + ' months reported';
+
+    const ns = y.ns, pat = y.pat;
+    $('k-rev').textContent = cr(ns);
+    $('k-rev-d').textContent = arrow(change(ns, p.ns)) + ' vs ' + (fy === 'FY27' ? 'Q1 FY 2025-26' : p.label);
+    $('k-rev-d').className = 'kpi-delta ' + cls(change(ns, p.ns));
+    $('k-rev-s').textContent = y.note || 'Full year';
+
+    const cost = y.ebitda == null ? null : ns - y.ebitda;
+    const priorCost = fy === 'FY26' ? 1450980 - 201492 : null;   // FY 2024-25 cost, verified; FY 2023-24 EBITDA not verified
+    $('k-cost').textContent = cost == null ? 'n/a' : cr(cost);
+    $('k-cost-d').textContent = cost == null ? 'Not verified for Q1' : (priorCost ? arrow(change(cost, priorCost)) + ' vs ' + p.label : 'Prior year not verified');
+    $('k-cost-d').className = 'kpi-delta neutral';
+    $('k-cost-s').textContent = cost == null ? 'Net sales less EBITDA*' : 'Net sales less operating EBITDA*';
+
+    $('k-profit').textContent = cr(pat);
+    $('k-profit-d').textContent = arrow(change(pat, p.pat)) + ' vs ' + (fy === 'FY27' ? 'Q1 FY 2025-26' : p.label);
+    $('k-profit-d').className = 'kpi-delta ' + cls(change(pat, p.pat));
+    $('k-profit-s').textContent = 'Net margin ' + pct(pat / ns);
+
+    const avgUnits = units / n;
+    const priorAvg = priorUnits / (fy === 'FY27' ? 6 : 12);
+    $('k-avg').textContent = num(avgUnits) + ' units';
+    $('k-avg-d').textContent = arrow(change(avgUnits, priorAvg)) + ' vs prior comparable period';
+    $('k-avg-d').className = 'kpi-delta ' + cls(change(avgUnits, priorAvg));
+    $('k-avg-s').textContent = 'Net sales ' + inr(ns * 1e6 / units) + ' per vehicle';
+}
+
+/* ---------- Tables ---------- */
+function renderTables() {
+    const fy = $('fy').value;
+    const rows = monthsOf(fy);
+    const prevFy = fy === 'FY25' ? null : fy === 'FY26' ? 'FY25' : 'FY26';
+    const prevRows = prevFy ? monthsOf(prevFy) : [];
+
+    const monthHtml = MONTH_NAMES.map((name, i) => {
+        const r = rows[i];
+        const label = (fy === 'FY25' ? (i < 9 ? 2024 : 2025) : (i < 9 ? 2025 : 2026));
+        const monthLabel = (fy === 'FY25' ? '' : '') + (i < 9 ? name + ' ' + (fy === 'FY25' ? 2024 : 2025) : name + ' ' + (fy === 'FY25' ? 2025 : 2026));
+        if (!r) return `<tr class="pending"><td>${name} ${fy === 'FY27' ? (i < 9 ? 2026 : 2027) : ''}</td><td colspan="5">Not yet reported</td></tr>`;
+        const pr = prevRows[i];
+        const yoy = pr ? change(r.tot, pr.tot) : null;
+        return `<tr>
+            <td>${r.m}</td>
+            <td class="num">${num(r.dom)}</td>
+            <td class="num">${num(r.exp)}</td>
+            <td class="num">${num(r.tot)}</td>
+            <td class="num">${pct(r.exp / r.tot)}</td>
+            <td class="num ${cls(yoy)}">${yoy == null ? '–' : arrow(yoy)}</td>
+        </tr>`;
+    }).join('');
+    $('month-body').innerHTML = monthHtml;
+
+    const tDom = sum(rows, 'dom'), tExp = sum(rows, 'exp'), tTot = sum(rows, 'tot');
+    $('month-foot').innerHTML = `<tr>
+        <td>Total (${rows.length} months)</td>
+        <td class="num">${num(tDom)}</td>
+        <td class="num">${num(tExp)}</td>
+        <td class="num">${num(tTot)}</td>
+        <td class="num">${pct(tExp / tTot)}</td>
+        <td></td>
+    </tr>`;
+
+    const qs = QUARTERS[fy];
+    const qRows = qs.map((q, i) => {
+        const months = rows.slice(i * 3, i * 3 + 3);
+        const units = months.length === 3 ? sum(months, 'tot') : null;
+        const pending = q.ns === 'pending';
+        if (pending) {
+            return `<tr class="pending"><td>${q.q} ${fy === 'FY27' ? 'FY 2026-27' : ''}</td><td colspan="6">Not yet reported</td></tr>`;
+        }
+        const nsTxt = q.ns == null ? 'Not verified' : cr(q.ns);
+        const patTxt = q.pat == null ? 'Not verified' : cr(q.pat);
+        const margin = q.ns && q.pat ? pct(q.pat / q.ns) : '–';
+        const costTxt = q.cost == null ? '–' : cr(q.cost);
+        const perVeh = q.ns && units ? inr(q.ns * 1e6 / units) : '–';
+        return `<tr>
+            <td>${q.q} · ${months.length ? months[0].m.split(' ')[0] + '–' + months[2].m.split(' ')[0] : ''}</td>
+            <td class="num">${units == null ? '–' : num(units)}</td>
+            <td class="num">${nsTxt}</td>
+            <td class="num">${patTxt}</td>
+            <td class="num">${margin}</td>
+            <td class="num">${costTxt}</td>
+            <td class="num">${perVeh}</td>
+        </tr>`;
+    }).join('');
+    $('q-body').innerHTML = qRows;
+}
+
+/* ---------- Charts ---------- */
+let monthChart, qChart;
+
+function initCharts() {
+    Chart.defaults.font.family = "'IBM Plex Sans Condensed', sans-serif";
+    Chart.defaults.color = '#6B7770';
+    const grid = { color: '#E4E8E2' };
+
+    monthChart = new Chart($('monthChart'), {
+        type: 'bar',
+        data: {
+            labels: MONTH_NAMES,
+            datasets: [
+                { label: 'Domestic (incl. OEM)', data: [], backgroundColor: '#2F4B8A', borderRadius: 2, stack: 's' },
+                { label: 'Exports', data: [], backgroundColor: '#C8892B', borderRadius: 2, stack: 's' }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${num(c.parsed.y)} units` } } },
+            scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => (v / 1000) + 'K' }, grid } }
+        }
+    });
+
+    qChart = new Chart($('qChart'), {
+        data: {
+            labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+            datasets: [
+                { type: 'bar', label: 'Net sales (₹ Cr)', data: [], backgroundColor: '#1F6F62', borderRadius: 3, yAxisID: 'y' },
+                { type: 'line', label: 'Profit after tax (₹ Cr)', data: [], borderColor: '#A8432F', backgroundColor: '#A8432F', borderWidth: 2.5, tension: .3, pointRadius: 4, spanGaps: false, yAxisID: 'y2' }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: c => c.parsed.y == null ? ` ${c.dataset.label}: not verified` : ` ${c.dataset.label}: ₹${Math.round(c.parsed.y).toLocaleString('en-IN')}` } } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { position: 'left', ticks: { callback: v => '₹' + (v / 1e5).toFixed(1) + 'L Cr' }, grid },
+                y2: { position: 'right', ticks: { callback: v => '₹' + Math.round(v).toLocaleString('en-IN') }, grid: { display: false } }
+            }
+        }
+    });
+}
+
+function updateCharts() {
+    const fy = $('fy').value;
+    const rows = monthsOf(fy);
+    const pad = arr => MONTH_NAMES.map((_, i) => (arr[i] === undefined ? null : arr[i]));
+
+    monthChart.data.datasets[0].data = pad(rows.map(r => r.dom));
+    monthChart.data.datasets[1].data = pad(rows.map(r => r.exp));
+    monthChart.update('none');
+
+    const qs = QUARTERS[fy];
+    qChart.data.labels = qs.map(q => q.q);
+    qChart.data.datasets[0].data = qs.map(q => (typeof q.ns === 'number' ? q.ns / 10 : null));
+    qChart.data.datasets[1].data = qs.map(q => (typeof q.pat === 'number' ? q.pat / 10 : null));
+    qChart.update('none');
+}
+
+/* ---------- Init ---------- */
+function setupFY() {
+    $('fy').innerHTML = [
+        ['FY25', 'FY 2024-25 (Apr 2024 – Mar 2025)'],
+        ['FY26', 'FY 2025-26 (Apr 2025 – Mar 2026)'],
+        ['FY27', 'FY 2026-27 (Apr – Sep 2026 reported)']
+    ].map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+    $('fy').value = 'FY26';
+    $('fy').addEventListener('change', () => { renderKPIs(); renderTables(); updateCharts(); });
+}
+
+setupFY();
+initCharts();
+renderKPIs();
+renderTables();
+updateCharts();
+</script>
+</body>
+</html>
